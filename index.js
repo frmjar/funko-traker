@@ -26,11 +26,11 @@ const extraerDatos = () => {
     return funkos;
 }
 
-const funkos = async (browser) => {
+const funkos = async (browser, search) => {
     const page = await browser.newPage();
 
     try {
-        await page.goto('https://www.google.com/search?q=funko+queen+historia+1170', { waitUntil: 'domcontentloaded' });
+        await page.goto(`https://www.google.com/search?q=funko+${search}`, { waitUntil: 'domcontentloaded' });
         const funkosList = await page.evaluate(extraerDatos);
 
         await page.close();
@@ -43,13 +43,20 @@ const funkos = async (browser) => {
 }
 
 (async () => {
+    const search = "queen historia 1170";
     const { browser } = await openBrowser();
     const funkosValues = new Map();
+    const funkosDescartados = new Map();
 
     try {
         await Promise.all(Array(5).fill().map(async () => {
-            const funkoList = await funkos(browser);
-            funkoList.forEach(f => funkosValues.set(f.name, f));
+            const funkoList = await funkos(browser, search);
+            funkoList.forEach(f => {
+                if(search.toLowerCase().split(' ').some(s => f.name.toLowerCase().includes(s.toLowerCase())))
+                    funkosValues.set(f.name, f)
+                else
+                    funkosDescartados.set(f.name, f)
+            });
         }));
     } catch (error) {
         console.error('Error en la ejecución principal:', error);
@@ -58,4 +65,6 @@ const funkos = async (browser) => {
     }
 
     funkosValues.forEach(f => console.log(f));
+    console.log('Descartados:', funkosDescartados.size);
+    funkosDescartados.forEach(f => console.log(f));
 })();
